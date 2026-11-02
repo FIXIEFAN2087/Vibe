@@ -185,9 +185,11 @@ function fmt(s) {
   return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(sec).padStart(2, '0');
 }
 
+// Использование единого времени UTC, чтобы разница в часовых поясах и сбитые часы не влияли на синхронность
 function totalSecondsSinceEpoch() {
-  const baseDate = new Date(2026, 0, 1, 0, 0, 0);
-  return Math.floor((Date.now() - baseDate.getTime()) / 1000);
+  // Базовая точка: 1 января 2026 года 00:00:00 по Гринвичу (UTC)
+  const baseDateUTC = Date.UTC(2026, 0, 1, 0, 0, 0);
+  return Math.floor((Date.now() - baseDateUTC) / 1000);
 }
 
 function currentPosition() {
@@ -309,7 +311,6 @@ function updateLive() {
   const pos = currentPosition();
   const item = SCHEDULE[pos.idx];
 
-  // Безопасное получение текущего времени плеера
   let curTime = pos.start;
   if (player && typeof player.getCurrentTime === 'function') {
     const val = player.getCurrentTime();
@@ -326,7 +327,8 @@ function updateLive() {
     document.getElementById('now-title').innerText = item.title;
     renderNextList(pos.idx, curTime);
   } else if (player && typeof player.seekTo === 'function') {
-    if (Math.abs(curTime - pos.start) > 3) {
+    // Жесткая синхронизация: если у пользователя таймлайн ушел больше чем на 2 секунды
+    if (Math.abs(curTime - pos.start) > 2) {
       player.seekTo(pos.start, true);
       curTime = pos.start;
     }

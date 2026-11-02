@@ -185,9 +185,7 @@ function fmt(s) {
   return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(sec).padStart(2, '0');
 }
 
-// Использование единого времени UTC, чтобы разница в часовых поясах и сбитые часы не влияли на синхронность
 function totalSecondsSinceEpoch() {
-  // Базовая точка: 1 января 2026 года 00:00:00 по Гринвичу (UTC)
   const baseDateUTC = Date.UTC(2026, 0, 1, 0, 0, 0);
   return Math.floor((Date.now() - baseDateUTC) / 1000);
 }
@@ -215,6 +213,7 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 function onYouTubeIframeAPIReady() {
   updateLogos();
   const pos = currentPosition();
+  currentIdx = pos.idx;
   try {
     player = new YT.Player('player', {
       videoId: SCHEDULE[pos.idx].id,
@@ -242,7 +241,7 @@ function onPlayerError(event) {
   const pos = currentPosition();
   currentIdx = (pos.idx + 1) % SCHEDULE.length;
   const nextItem = SCHEDULE[currentIdx];
-  if(player && player.loadVideoById) {
+  if(player && typeof player.loadVideoById === 'function') {
     player.loadVideoById({ videoId: nextItem.id, startSeconds: 0 });
   }
 }
@@ -250,6 +249,11 @@ function onPlayerError(event) {
 function onPlayerReady(event) {
   event.target.mute();
   event.target.playVideo();
+  
+  const pos = currentPosition();
+  document.getElementById('now-title').innerText = SCHEDULE[pos.idx].title;
+  renderNextList(pos.idx, pos.start);
+
   setInterval(updateLive, 1000);
 }
 
@@ -295,9 +299,11 @@ function fullscreen() {
 }
 
 function onPlayerStateChange(event) {
+  // Автоматический переход к актуальной позиции при завершении или сбое
   if (event.data === YT.PlayerState.ENDED) {
     const pos = currentPosition();
-    if (player && player.loadVideoById) {
+    currentIdx = pos.idx;
+    if (player && typeof player.loadVideoById === 'function') {
       player.loadVideoById({ videoId: SCHEDULE[pos.idx].id, startSeconds: pos.start });
     }
   }
@@ -319,6 +325,7 @@ function updateLive() {
     }
   }
 
+  // Если программа сменилась по времени, аккуратно переключаем видео один раз
   if (currentIdx !== pos.idx) {
     currentIdx = pos.idx;
     if (player && typeof player.loadVideoById === 'function') {
@@ -327,8 +334,8 @@ function updateLive() {
     document.getElementById('now-title').innerText = item.title;
     renderNextList(pos.idx, curTime);
   } else if (player && typeof player.seekTo === 'function') {
-    // Жесткая синхронизация: если у пользователя таймлайн ушел больше чем на 2 секунды
-    if (Math.abs(curTime - pos.start) > 2) {
+    // Корректируем рассинхрон только если ушло больше чем на 4 секунды
+    if (Math.abs(curTime - pos.start) > 4) {
       player.seekTo(pos.start, true);
       curTime = pos.start;
     }

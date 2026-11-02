@@ -30,18 +30,14 @@
   .tv { background: linear-gradient(160deg, var(--panel2), var(--panel)); border: 1px solid var(--border); border-radius: 26px; padding: 14px; box-shadow: 0 30px 60px rgba(0,0,0,.5); }
   .screen { position: relative; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 16/9; width: 100%; }
   
-  /* Блокировщик кликов по видео */
   .screen-guard { position: absolute; inset: 0; z-index: 5; background: transparent; pointer-events: auto; }
-  
   .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
   .video-container iframe { width: 100%; height: 100%; border: 0; display: block; }
 
-  /* Водяной знак / логотип поверх видео (как во втором примере) */
   .live-watermark { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: flex; align-items: center; justify-content: center; }
   .live-watermark img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity 0.5s ease; }
   .live-watermark img.visible { opacity: 1; }
 
-  /* Экран первого запуска со звуком */
   .off-air { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #000; z-index: 20; text-align: center; pointer-events: auto; }
   .off-air-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
   .off-air-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(5,7,14,0.75); width: 100%; height: 100%; backdrop-filter: blur(6px); padding: 20px; }
@@ -81,10 +77,8 @@
 
   <div class="tv">
     <div class="screen">
-      <!-- Защитный слой от кликов по видео -->
       <div class="screen-guard" id="screen-guard"></div>
       
-      <!-- Водяной знак / логотип поверх видео -->
       <div class="live-watermark">
         <img id="watermark-logo-img" alt="Вайб!">
       </div>
@@ -93,7 +87,6 @@
         <div id="player"></div>
       </div>
       
-      <!-- Стартовый оверлей для разблокировки аудио -->
       <div class="off-air" id="unmute-overlay">
         <img id="overlay-logo-img" class="off-air-bg" alt="Вайб!">
         <div class="off-air-content">
@@ -151,9 +144,9 @@ function updateLogos() {
   const day = now.getDate();
 
   let isWinter = false;
-  if (month === 11 && day >= 15) isWinter = true; // с 15 декабря
-  if (month === 0) isWinter = true;               // весь январь
-  if (month === 1 && day < 1) isWinter = true;    // до 1 февраля
+  if (month === 11 && day >= 15) isWinter = true;
+  if (month === 0) isWinter = true;               
+  if (month === 1 && day < 1) isWinter = true;    
 
   const logoUrl = isWinter ? LOGO_WINTER : LOGO_MAIN;
 
@@ -209,11 +202,22 @@ function onYouTubeIframeAPIReady() {
       },
       events: { 
         'onReady': onPlayerReady, 
-        'onStateChange': onPlayerStateChange 
+        'onStateChange': onPlayerStateChange,
+        'onError': onPlayerError
       }
     });
   } catch(e) {
     console.error(e);
+  }
+}
+
+// Автоматический пропуск заблокированных или удаленных видео
+function onPlayerError(event) {
+  const pos = currentPosition();
+  currentIdx = (pos.idx + 1) % SCHEDULE.length;
+  const nextItem = SCHEDULE[currentIdx];
+  if(player && player.loadVideoById) {
+    player.loadVideoById({ videoId: nextItem.id, startSeconds: 0 });
   }
 }
 
@@ -231,11 +235,9 @@ function startTV() {
     document.getElementById('mute-btn').innerText = '🔊';
   }
   
-  // Скрываем стартовый оверлей
   const overlay = document.getElementById('unmute-overlay');
   if (overlay) overlay.style.display = 'none';
 
-  // Показываем водяной знак логотипа поверх видео
   const watermark = document.getElementById('watermark-logo-img');
   if (watermark) watermark.classList.add('visible');
 

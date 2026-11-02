@@ -121,7 +121,19 @@
 </div>
 
 <script>
-const SCHEDULE = [
+// Функция для конвертации длительности: поддерживает "MM:SS", "HH:MM:SS" или просто секунды (числа)
+function parseDuration(val) {
+  if (typeof val === 'number') return val;
+  const parts = val.split(':').map(Number);
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  return Number(val) || 0;
+}
+
+const RAW_SCHEDULE = [
   { id: 'vZf1oXNFFG4', duration: 2516, title: 'Майнкрафт наизнанку: Суперсилы | 13+' },
   { id: 'lSYlSigNT-k', duration: 5094, title: 'Яндекс.Колонка с Алисой | 18+' },
   { id: 'WULuYBNSNN8', duration: 623, title: 'Дети-супергерои. 1 сезон | 13+' },
@@ -134,6 +146,12 @@ const SCHEDULE = [
   { id: 'hBYW8uaiCDq0', duration: 1372, title: 'Майнкрафт наизнанку: Город | 13+' },
   { id: 'rom5GpRXHJo', duration: 1247, title: 'Майнкрафт наизнанку: Новые приключения | 13+' }
 ];
+
+// Автоматически переводим все длительности в секунды
+const SCHEDULE = RAW_SCHEDULE.map(item => ({
+  ...item,
+  duration: parseDuration(item.duration)
+}));
 
 const TOTAL_DURATION = SCHEDULE.reduce((a, x) => a + x.duration, 0);
 
@@ -329,3 +347,4 @@ function renderNextList(idx) {
 </script>
 </body>
 </html>
+

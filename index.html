@@ -121,7 +121,6 @@
 </div>
 
 <script>
-// Функция для конвертации длительности: поддерживает "MM:SS", "HH:MM:SS" или просто секунды (числа)
 function parseDuration(val) {
   if (typeof val === 'number') return val;
   const parts = val.split(':').map(Number);
@@ -149,7 +148,6 @@ const RAW_SCHEDULE = [
   { id: 'rom5GpRXHJo', duration: 1247, title: 'Майнкрафт наизнанку: Новые приключения | 13+' }
 ];
 
-// Автоматически переводим все длительности в секунды
 const SCHEDULE = RAW_SCHEDULE.map(item => ({
   ...item,
   duration: parseDuration(item.duration)
@@ -237,7 +235,6 @@ function onYouTubeIframeAPIReady() {
   }
 }
 
-// Автоматический пропуск заблокированных или удаленных видео
 function onPlayerError(event) {
   const pos = currentPosition();
   currentIdx = (pos.idx + 1) % SCHEDULE.length;
@@ -311,13 +308,20 @@ function updateLive() {
   const pos = currentPosition();
   const item = SCHEDULE[pos.idx];
 
+  // Проверка смены видео или жесткая синхронизация (если рассинхрон больше 3 секунд)
   if (currentIdx !== pos.idx) {
     currentIdx = pos.idx;
-    if (player && player.getVideoUrl && !player.getVideoUrl().includes(item.id)) {
+    if (player && player.loadVideoById) {
       player.loadVideoById({ videoId: item.id, startSeconds: pos.start });
     }
     document.getElementById('now-title').innerText = item.title;
     renderNextList(pos.idx);
+  } else if (player && player.getCurrentTime) {
+    const curTime = player.getCurrentTime();
+    // Если рассинхронизация с реальным временем трансляции больше 3 секунд — подтягиваем
+    if (Math.abs(curTime - pos.start) > 3) {
+      player.seekTo(pos.start, true);
+    }
   }
 
   const curTime = player && player.getCurrentTime ? player.getCurrentTime() : pos.start;
@@ -349,4 +353,3 @@ function renderNextList(idx) {
 </script>
 </body>
 </html>
-

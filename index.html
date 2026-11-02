@@ -30,17 +30,29 @@
   .tv { background: linear-gradient(160deg, var(--panel2), var(--panel)); border: 1px solid var(--border); border-radius: 26px; padding: 14px; box-shadow: 0 30px 60px rgba(0,0,0,.5); }
   .screen { position: relative; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 16/9; width: 100%; }
   
+  /* Блокировщик кликов по видео */
   .screen-guard { position: absolute; inset: 0; z-index: 5; background: transparent; pointer-events: auto; }
+  
   .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
   .video-container iframe { width: 100%; height: 100%; border: 0; display: block; transform: scale(1.35); }
 
-  .live-watermark { position: absolute; top: 15px; left: 15px; z-index: 4; pointer-events: none; max-width: 120px; max-height: 60px; }
-  .live-watermark img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+  /* Полноэкранный логотип / Заставка */
+  .fullscreen-logo { 
+    position: absolute; 
+    inset: 0; 
+    z-index: 10; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    display: block; 
+    pointer-events: none; 
+  }
 
-  .off-air { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #000; z-index: 10; text-align: center; pointer-events: auto; }
-  .off-air img { width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 1; }
-  .off-air-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(5,7,14,0.75); width: 100%; height: 100%; backdrop-filter: blur(4px); padding: 20px; }
-  .off-air .txt { color: #fff; font-size: 16px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+  /* Экран первого запуска со звуком */
+  .off-air { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #000; z-index: 20; text-align: center; pointer-events: auto; }
+  .off-air-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: blur(6px); opacity: 0.5; }
+  .off-air-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(5,7,14,0.75); width: 100%; height: 100%; backdrop-filter: blur(6px); padding: 20px; }
+  .off-air .txt { color: #fff; font-size: 18px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
   
   .power-btn { background: var(--grad); color: #fff; border: none; font-weight: 800; font-size: 18px; padding: 16px 36px; border-radius: 999px; cursor: pointer; box-shadow: 0 8px 26px rgba(255,0,127,.4); transition: transform .15s; pointer-events: auto; }
   .power-btn:hover { transform: translateY(-2px); }
@@ -76,21 +88,19 @@
 
   <div class="tv">
     <div class="screen">
-      <!-- Защитный слой от кликов -->
+      <!-- Защитный слой от кликов по видео -->
       <div class="screen-guard" id="screen-guard"></div>
       
-      <!-- Сезонный логотип в углу -->
-      <div class="live-watermark">
-        <img id="watermark-logo-img" alt="Вайб!">
-      </div>
+      <!-- ЛОГОТИП НА ВЕСЬ ЭКРАН (Заставка) -->
+      <img id="fullscreen-logo-img" class="fullscreen-logo" alt="Заставка Вайб!">
 
       <div class="video-container">
         <div id="player"></div>
       </div>
       
-      <!-- Экран запуска вещания со звуком -->
+      <!-- Стартовый оверлей для разблокировки аудио -->
       <div class="off-air" id="unmute-overlay">
-        <img id="fullscreen-logo-img" alt="Вайб!">
+        <img id="overlay-logo-img" class="off-air-bg" alt="Вайб!">
         <div class="off-air-content">
           <div class="txt">Круглосуточный эфир канала «Вайб!»</div>
           <button class="power-btn" onclick="startTV()">▶ Включить эфир</button>
@@ -123,14 +133,12 @@
 </div>
 
 <script>
-// Расписание телеканала (добавляйте сюда новые видео)
 const SCHEDULE = [
   { id: 'N4Nk5dyES2M', duration: 100, title: 'Майнкрафт наизнанку — Сноп сена (1 серия)' }
 ];
 
 const TOTAL_DURATION = SCHEDULE.reduce((a, x) => a + x.duration, 0);
 
-// Прямые ссылки на логотипы
 const LOGO_MAIN = 'https://lh3.googleusercontent.com/d/1UDjAWQ26hCgvtE4v18xwfVZX0keq0Mp8';
 const LOGO_WINTER = 'https://lh3.googleusercontent.com/d/1kclSMbjcuOuI9kh4PqQUG3t0m4ZcnGdu';
 
@@ -138,10 +146,9 @@ let player = null;
 let muted = true;
 let currentIdx = -1;
 
-// Проверка и установка логотипа по сезонам
 function updateLogos() {
   const now = new Date();
-  const month = now.getMonth(); // 0 = Янв, 11 = Дек
+  const month = now.getMonth();
   const day = now.getDate();
 
   let isWinter = false;
@@ -152,7 +159,7 @@ function updateLogos() {
   const logoUrl = isWinter ? LOGO_WINTER : LOGO_MAIN;
 
   document.getElementById('fullscreen-logo-img').src = logoUrl;
-  document.getElementById('watermark-logo-img').src = logoUrl;
+  document.getElementById('overlay-logo-img').src = logoUrl;
 }
 
 function fmt(s) {
@@ -181,7 +188,6 @@ function findAt(t) {
   return { idx: 0, start: 0 };
 }
 
-// Загрузка API YouTube
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 var firstScriptTag = document.getElementsByTagName('script')[0];

@@ -34,31 +34,16 @@
   .screen-guard { position: absolute; inset: 0; z-index: 5; background: transparent; pointer-events: auto; }
   
   .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-  .video-container iframe { width: 100%; height: 100%; border: 0; display: block; transform: scale(1.35); }
+  .video-container iframe { width: 100%; height: 100%; border: 0; display: block; }
 
-  /* Полноэкранный логотип / Заставка */
-  .fullscreen-logo { 
-    position: absolute; 
-    inset: 0; 
-    z-index: 10; 
-    width: 100%; 
-    height: 100%; 
-    object-fit: contain; 
-    background: #000;
-    display: flex; 
-    align-items: center;
-    justify-content: center;
-    pointer-events: none; 
-    transition: opacity 0.5s ease;
-  }
-  .fullscreen-logo.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
+  /* Водяной знак / логотип поверх видео (как во втором примере) */
+  .live-watermark { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+  .live-watermark img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity 0.5s ease; }
+  .live-watermark img.visible { opacity: 1; }
 
   /* Экран первого запуска со звуком */
   .off-air { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #000; z-index: 20; text-align: center; pointer-events: auto; }
-  .off-air-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: blur(6px); opacity: 0.5; }
+  .off-air-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
   .off-air-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(5,7,14,0.75); width: 100%; height: 100%; backdrop-filter: blur(6px); padding: 20px; }
   .off-air .txt { color: #fff; font-size: 18px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
   
@@ -99,8 +84,10 @@
       <!-- Защитный слой от кликов по видео -->
       <div class="screen-guard" id="screen-guard"></div>
       
-      <!-- ЛОГОТИП НА ВЕСЬ ЭКРАН (Заставка) -->
-      <img id="fullscreen-logo-img" class="fullscreen-logo" alt="Заставка Вайб!">
+      <!-- Водяной знак / логотип поверх видео -->
+      <div class="live-watermark">
+        <img id="watermark-logo-img" alt="Вайб!">
+      </div>
 
       <div class="video-container">
         <div id="player"></div>
@@ -166,7 +153,7 @@ function updateLogos() {
 
   const logoUrl = isWinter ? LOGO_WINTER : LOGO_MAIN;
 
-  document.getElementById('fullscreen-logo-img').src = logoUrl;
+  document.getElementById('watermark-logo-img').src = logoUrl;
   document.getElementById('overlay-logo-img').src = logoUrl;
 }
 
@@ -244,9 +231,9 @@ function startTV() {
   const overlay = document.getElementById('unmute-overlay');
   if (overlay) overlay.style.display = 'none';
 
-  // Плавное скрытие полноэкранного логотипа-заставки
-  const logoScreen = document.getElementById('fullscreen-logo-img');
-  if (logoScreen) logoScreen.classList.add('hidden');
+  // Показываем водяной знак логотипа поверх видео
+  const watermark = document.getElementById('watermark-logo-img');
+  if (watermark) watermark.classList.add('visible');
 
   fullscreen();
 }

@@ -43,9 +43,17 @@
     z-index: 10; 
     width: 100%; 
     height: 100%; 
-    object-fit: cover; 
-    display: block; 
+    object-fit: contain; 
+    background: #000;
+    display: flex; 
+    align-items: center;
+    justify-content: center;
     pointer-events: none; 
+    transition: opacity 0.5s ease;
+  }
+  .fullscreen-logo.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* Экран первого запуска со звуком */
@@ -231,8 +239,14 @@ function startTV() {
     muted = false;
     document.getElementById('mute-btn').innerText = '🔊';
   }
+  
+  // Скрываем стартовый оверлей
   const overlay = document.getElementById('unmute-overlay');
   if (overlay) overlay.style.display = 'none';
+
+  // Плавное скрытие полноэкранного логотипа-заставки
+  const logoScreen = document.getElementById('fullscreen-logo-img');
+  if (logoScreen) logoScreen.classList.add('hidden');
 
   fullscreen();
 }

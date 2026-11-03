@@ -149,7 +149,6 @@ const RAW_SCHEDULE = [
   { id: 'M39ibSy85iw', duration: "12:09", title: 'Кошки. Ой, милота! | 13+' },
   { id: 'YuWeWcgdiHU', duration: "11:52", title: 'Кошки. Шерстяные клубки | 13+' },
   { id: '-s1wllkcJY8', duration: "11:52", title: 'Кошки. Веселые истории | 13+' },
-  { id: 'O0l7Obz5GDM', duration: "13:08", title: 'Кошки. Юбилейный сезон | 13+' },
   { id: 'nLlGqd7IddY', duration: 1246, title: 'Майнкрафт наизнанку: Последний перезапуск | 13+' },
   { id: 'uBEY2TBJ4xo', duration: 1246, title: 'Майнкрафт наизнанку: Путешествие | 13+' },
   { id: 'hBYW8uaiCDq0', duration: 1372, title: 'Майнкрафт наизнанку: Город | 13+' },
@@ -233,6 +232,7 @@ function onYouTubeIframeAPIReady() {
         'rel': 0, 
         'modestbranding': 1,
         'cc_load_policy': 0,
+        'hl': 'ru',
         'start': Math.floor(pos.start) 
       },
       events: { 
@@ -252,6 +252,10 @@ function onPlayerError(event) {
   const nextItem = SCHEDULE[currentIdx];
   if(player && typeof player.loadVideoById === 'function') {
     player.loadVideoById({ videoId: nextItem.id, startSeconds: 0 });
+    // Принудительно выключаем субтитры при смене видео
+    if (typeof player.unloadModule === 'function') {
+      player.unloadModule('captions');
+    }
   }
 }
 
@@ -259,6 +263,15 @@ function onPlayerReady(event) {
   event.target.mute();
   event.target.playVideo();
   
+  // Принудительное отключение субтитров через API плеера
+  if (player && typeof player.unloadModule === 'function') {
+    player.unloadModule('captions');
+  }
+  if (player && typeof player.setOption === 'function') {
+    player.setOption('captions', 'reload', true);
+    player.setOption('captions', 'track', {});
+  }
+
   const pos = currentPosition();
   document.getElementById('now-title').innerText = SCHEDULE[pos.idx].title;
   renderNextList(pos.idx, pos.start);
@@ -304,6 +317,9 @@ function onPlayerStateChange(event) {
     currentIdx = pos.idx;
     if (player && typeof player.loadVideoById === 'function') {
       player.loadVideoById({ videoId: SCHEDULE[pos.idx].id, startSeconds: pos.start });
+      if (typeof player.unloadModule === 'function') {
+        player.unloadModule('captions');
+      }
     }
   }
 }
@@ -328,6 +344,9 @@ function updateLive() {
     currentIdx = pos.idx;
     if (player && typeof player.loadVideoById === 'function') {
       player.loadVideoById({ videoId: item.id, startSeconds: pos.start });
+      if (typeof player.unloadModule === 'function') {
+        player.unloadModule('captions');
+      }
     }
     document.getElementById('now-title').innerText = item.title;
     renderNextList(pos.idx, curTime);
